@@ -13,7 +13,7 @@ RUN GO111MODULE=on GOPROXY=https://proxy.golang.org go mod download
 
 COPY . .
 
-RUN make build
+RUN CGO_ENABLED=0 go build -a --trimpath --installsuffix cgo --ldflags="-s" -o whoami
 
 # Create a minimal container to run a Golang static binary
 FROM scratch
