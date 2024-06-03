@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -45,7 +44,6 @@ func main() {
 	flag.Parse()
 
 	mux := http.NewServeMux()
-	mux.Handle("/echo", handle(echoHandler, verbose))
 	mux.Handle("/api", handle(apiHandler, verbose))
 	mux.Handle("/", handle(whoamiHandler, verbose))
 
@@ -67,50 +65,7 @@ func handle(next http.HandlerFunc, verbose bool) http.Handler {
 	})
 }
 
-func echoHandler(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	for {
-		messageType, p, err := conn.ReadMessage()
-		if err != nil {
-			return
-		}
-
-		printBinary(p)
-		err = conn.WriteMessage(messageType, p)
-		if err != nil {
-			return
-		}
-	}
-}
-
-func printBinary(s []byte) {
-	fmt.Printf("Received b:")
-	for n := 0; n < len(s); n++ {
-		fmt.Printf("%d,", s[n])
-	}
-	fmt.Printf("\n")
-}
-
 func whoamiHandler(w http.ResponseWriter, r *http.Request) {
-	queryParams := r.URL.Query()
-
-	wait := queryParams.Get("wait")
-	if wait != "" {
-		duration, err := time.ParseDuration(wait)
-		if err == nil {
-			time.Sleep(duration)
-		}
-	}
-
-	if name != "" {
-		_, _ = fmt.Fprintln(w, "Name:", name)
-	}
-
 	hostname, _ := os.Hostname()
 	_, _ = fmt.Fprintln(w, "Hostname:", hostname)
 
@@ -122,12 +77,6 @@ func whoamiHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.Write(w); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-
-	if ok, _ := strconv.ParseBool(queryParams.Get("env")); ok {
-		for _, env := range os.Environ() {
-			_, _ = fmt.Fprintln(w, env)
-		}
 	}
 }
 
